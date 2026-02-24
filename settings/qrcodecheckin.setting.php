@@ -16,7 +16,7 @@ return [
     'is_contact' => 0,
     'description' => E::ts('The events that will use QRCodes for a given contact (can be more than one event).'),
     'help_text' => E::ts('If enabled, when sending email to contacts you can include a QR Checkin Code token for this event.'),
-	],
+  ],
   'qrcode_scan_action' => [
     'name' => 'qrcode_scan_action',
     'title' => E::ts('QR Code Scan Action'),

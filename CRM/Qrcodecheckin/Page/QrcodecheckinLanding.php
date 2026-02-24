@@ -57,7 +57,7 @@ class CRM_Qrcodecheckin_Page_QrcodecheckinLanding extends CRM_Core_Page {
   }
 
   private function setDetails() {
-    $sql = "SELECT title, display_name, st.name as participant_status, fee_level, fee_amount, role_id FROM civicrm_contact c
+    $sql = "SELECT title, display_name, st.name as participant_status, fee_level, fee_amount, role_id, event_id FROM civicrm_contact c
         JOIN civicrm_participant p ON c.id = p.contact_id
         JOIN civicrm_event e ON e.id = p.event_id
         JOIN civicrm_participant_status_type st ON st.id = p.status_id
@@ -71,7 +71,20 @@ class CRM_Qrcodecheckin_Page_QrcodecheckinLanding extends CRM_Core_Page {
     $this->assign('fee_amount', $dao->fee_amount);
     $roles = CRM_Core_PseudoConstant::get('CRM_Event_DAO_Participant', 'role_id');
     $this->assign('role', $roles[$dao->role_id]);
-
+    // Embed afforms. Permission check is false because we're already blocking anonymous users from this function.
+    $afforms = \Civi\Api4\Afform::get(FALSE)
+      ->addWhere('placement', 'CONTAINS', 'qrcode_landing_page')
+      ->addSelect('name')
+      ->execute()
+      ->column('name');
+    if (count($afforms) > 0) {
+      $this->assign('afformVars', ['event_id' => $dao->event_id, 'participant_id' => $this->participant_id]);
+      foreach ($afforms as $afform) {
+        Civi::service('angularjs.loader')->addModules($afform);
+        $afformList[$afform] = \CRM_Utils_String::convertStringToDash($afform);
+      }
+      $this->assign('afformList', $afformList);
+    }
     if ($dao->participant_status === 'Registered') {
       $scanAction = \Civi::settings()->get('qrcode_scan_action');
       if ($scanAction !== 'autoupdate') {
@@ -93,14 +106,6 @@ class CRM_Qrcodecheckin_Page_QrcodecheckinLanding extends CRM_Core_Page {
     else {
       $this->assign('status_class', 'qrcheckin-status-other');
     }
-  }
-
-  private function getDisplayName() {
-    $sql = "SELECT display_name FROM civicrm_contact c JOIN civicrm_participant p ON c.id = p.contact_id
-      WHERE p.id = %0";
-    $dao = CRM_Core_DAO::executeQuery($sql, array(0 => array($this->participant_id, 'Integer')));
-    $dao->fetch();
-    return $dao->display_name;
   }
 
   private function refuseAccess() {

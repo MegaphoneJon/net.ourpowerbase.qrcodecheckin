@@ -65,6 +65,18 @@ If they have any other status, it will be displayed in red:
 
 ![Registrant status with button to updat](/images/qrcode-checkin-pending.png)
 
+## Embed FormBuilder forms
+
+You can embed FormBuilder forms on the QR Code checking landing page to show your staff additional information about the registration.
+
+In the FormBuilder main settings tab, set *Expose To* to **QR Code Landing Page**.  You can embed an unlimited number of forms.
+
+While embedding submission forms is supported, only search forms can be filtered to show information specific to the event/participant.
+
+To filter an embedded SearchKit query to the participant and/or event, go to the FormBuilder tab for the search. Under *Filters*, select **Participant Event** with filter type of **Event being Viewed**, and/or add **Participant Existing Participant** with filter type **Participant being Viewed**.
+
+![Screenshot of FormBuilder settings displaying filter location](/images/qrcode-embed-form.png)
+
 ## Tokens
 
 If enabled, tokens are generated for each event configured to use QR Codes. There are two tokens per event you can use:

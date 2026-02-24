@@ -12,4 +12,16 @@
   {if $update_button == TRUE}
     <button id="qrcheckin-update-button">{ts domain="net.ourpowerbase.qrcodecheckin"}Update to Attended{/ts}</button>
   {/if}
+
+  {if isset($afformList)}
+    {foreach from=$afformList key=afformName item=afformElementName}
+      <div id="formbuilder-embed">
+        <crm-angular-js modules="{$afformName}">
+          <form id="bootstrap-theme">
+            <{$afformElementName} options='{$afformVars|@json_encode}'></afform-search-abd-test>
+          </form>
+        </crm-angular-js>
+      </div>
+    {/foreach}
+  {/if}
 {/if}
