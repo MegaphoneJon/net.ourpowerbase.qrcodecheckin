@@ -373,11 +373,17 @@ function qrcodecheckin_civicrm_alterMailParams(&$params, $context) {
   if (($params['workflow'] ?? '') !== 'event_online_receipt') {
     return;
   }
-  if ($params["tokenContext"]["participant"]["registered_by_id"] ?? FALSE) {
-    $qrcode_multiple_participant_email = \Civi::settings()->get('qrcode_multiple_participant_email');
-    if ($qrcode_multiple_participant_email) {
-      $params['abortMailSend'] = TRUE;
-    }
+  if (!isset($params["tokenContext"]["participant"]["registered_by_id"])) {
+    return;
+  }
+  $eventsUsingQRInConfirmation = \Civi::settings()->get('qrcode_confirmation_events') ?? [];
+  $eventId = $params['tokenContext']['eventId'];
+  if (!in_array($eventId, $eventsUsingQRInConfirmation)) {
+    return;
+  }
+  $qrcode_multiple_participant_email = \Civi::settings()->get('qrcode_multiple_participant_email');
+  if ($qrcode_multiple_participant_email) {
+    $params['abortMailSend'] = TRUE;
   }
 }
 

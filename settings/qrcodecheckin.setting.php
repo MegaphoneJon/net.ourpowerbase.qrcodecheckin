@@ -17,6 +17,15 @@ return [
     'description' => E::ts('The events that will use QRCodes for a given contact (can be more than one event).'),
     'help_text' => E::ts('If enabled, when sending email to contacts you can include a QR Checkin Code token for this event.'),
   ],
+  'qrcode_confirmation_events' => [
+    'type' => 'String',
+    'serialize' => CRM_Core_DAO::SERIALIZE_JSON,
+    'default' => [],
+    'add' => '6.4',
+    'is_domain' => 1,
+    'is_contact' => 0,
+    'description' => E::ts('The events that will use QRCodes, sending the code in the confirmation email.'),
+  ],
   'qrcode_scan_action' => [
     'name' => 'qrcode_scan_action',
     'title' => E::ts('QR Code Scan Action'),
