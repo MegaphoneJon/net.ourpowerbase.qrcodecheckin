@@ -8,7 +8,7 @@ CRM.$('#qrcheckin-update-button').click(function() {
   }).done(function(result) {
     if (result['is_error'] == 0) {
       CRM.$('#qrcheckin-status').html('Attended');
-      CRM.$('#qrcheckin-status-line').removeClass( "qrcheckin-status-registered" ).addClass( "qrcheckin-status-attended" );
+      CRM.$('#qrcheckin-status-line').removeClass( "qrcheckin-status-not-checked-in" ).addClass( "qrcheckin-status-success" );
       CRM.$('#qrcheckin-update-button').hide();
     }
     else {
