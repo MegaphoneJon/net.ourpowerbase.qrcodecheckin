@@ -85,10 +85,14 @@ class CRM_Qrcodecheckin_Page_QrcodecheckinLanding extends CRM_Core_Page {
       }
       $this->assign('afformList', $afformList);
     }
+    // If auto-update is off, "Registered" is a neutral status, becoming successful when updated to Attended.
+    // If auto-update is on, "Registered" is a successful status.
+    // "Attended" is always a red flag unless it's as a result of pressing the "Update to Attended" button on this page.
+    $scanAction = \Civi::settings()->get('qrcode_scan_action');
     if ($dao->participant_status === 'Registered') {
-      $scanAction = \Civi::settings()->get('qrcode_scan_action');
       if ($scanAction !== 'autoupdate') {
         $this->assign('update_button', TRUE);
+        $this->assign('status_class', 'qrcheckin-status-not-checked-in');
       }
       else {
         $this->assign('update_button', FALSE);
@@ -96,12 +100,9 @@ class CRM_Qrcodecheckin_Page_QrcodecheckinLanding extends CRM_Core_Page {
           ->addWhere('id', '=', $this->participant_id)
           ->addValue('status_id:name', 'Attended')
           ->execute();
+        $this->assign('participant_status', E::ts("Was %1, now Attended", [1 => $dao->participant_status]));
+        $this->assign('status_class', 'qrcheckin-status-success');
       }
-      $this->assign('participant_status', "Was $dao->participant_status, now Attended");
-      $this->assign('status_class', 'qrcheckin-status-registered');
-    }
-    elseif ($dao->participant_status == 'Attended') {
-      $this->assign('status_class', 'qrcheckin-status-attended');
     }
     else {
       $this->assign('status_class', 'qrcheckin-status-other');

@@ -18,11 +18,11 @@
 
 }
 
-.qrcheckin-status-attended {
+.qrcheckin-status-success {
   color: green;
 }
 
-.qrcheckin-status-registered {
+.qrcheckin-status-not-checked-in {
   color: orange;
 }
 
