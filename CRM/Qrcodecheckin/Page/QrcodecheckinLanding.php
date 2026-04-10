@@ -57,20 +57,17 @@ class CRM_Qrcodecheckin_Page_QrcodecheckinLanding extends CRM_Core_Page {
   }
 
   private function setDetails() {
-    $sql = "SELECT title, display_name, st.name as participant_status, fee_level, fee_amount, role_id, event_id FROM civicrm_contact c
-        JOIN civicrm_participant p ON c.id = p.contact_id
-        JOIN civicrm_event e ON e.id = p.event_id
-        JOIN civicrm_participant_status_type st ON st.id = p.status_id
-        WHERE p.id = %0";
-    $dao = CRM_Core_DAO::executeQuery($sql, array(0 => array($this->participant_id, 'Integer')));
-    $dao->fetch();
-    $this->assign('event_title', $dao->title);
-    $this->assign('display_name', $dao->display_name);
-    $this->assign('participant_status', $dao->participant_status);
-    $this->assign('fee_level', $dao->fee_level);
-    $this->assign('fee_amount', $dao->fee_amount);
-    $roles = CRM_Core_PseudoConstant::get('CRM_Event_DAO_Participant', 'role_id');
-    $this->assign('role', $roles[$dao->role_id]);
+    $details = \Civi\Api4\Participant::get(FALSE)
+      ->addSelect('event_id.title', 'contact_id.display_name', 'status_id:name', 'status_id:label', 'fee_level', 'fee_amount', 'event_id', 'role_id:label')
+      ->addWhere('id', '=', $this->participant_id)
+      ->execute()
+      ->first();
+    $this->assign('event_title', $details['event_id.title']);
+    $this->assign('display_name', $details['contact_id.display_name']);
+    $this->assign('participant_status', $details['status_id:label']);
+    $this->assign('fee_level', implode(', ', $details['fee_level']));
+    $this->assign('fee_amount', $details['fee_amount']);
+    $this->assign('role', implode(', ', $details['role_id:label']));
     // Embed afforms. Permission check is false because we're already blocking anonymous users from this function.
     $afforms = \Civi\Api4\Afform::get(FALSE)
       ->addWhere('placement', 'CONTAINS', 'qrcode_landing_page')
@@ -78,18 +75,19 @@ class CRM_Qrcodecheckin_Page_QrcodecheckinLanding extends CRM_Core_Page {
       ->execute()
       ->column('name');
     if (count($afforms) > 0) {
-      $this->assign('afformVars', ['event_id' => $dao->event_id, 'participant_id' => $this->participant_id]);
+      $this->assign('afformVars', ['event_id' => $details['event_id'], 'participant_id' => $this->participant_id]);
       foreach ($afforms as $afform) {
         Civi::service('angularjs.loader')->addModules($afform);
         $afformList[$afform] = \CRM_Utils_String::convertStringToDash($afform);
       }
       $this->assign('afformList', $afformList);
     }
+
     // If auto-update is off, "Registered" is a neutral status, becoming successful when updated to Attended.
     // If auto-update is on, "Registered" is a successful status.
     // "Attended" is always a red flag unless it's as a result of pressing the "Update to Attended" button on this page.
-    $scanAction = \Civi::settings()->get('qrcode_scan_action');
-    if ($dao->participant_status === 'Registered') {
+    if ($details['status_id:name'] === 'Registered') {
+      $scanAction = \Civi::settings()->get('qrcode_scan_action');
       if ($scanAction !== 'autoupdate') {
         $this->assign('update_button', TRUE);
         $this->assign('status_class', 'qrcheckin-status-not-checked-in');
@@ -100,7 +98,7 @@ class CRM_Qrcodecheckin_Page_QrcodecheckinLanding extends CRM_Core_Page {
           ->addWhere('id', '=', $this->participant_id)
           ->addValue('status_id:name', 'Attended')
           ->execute();
-        $this->assign('participant_status', E::ts("Was %1, now Attended", [1 => $dao->participant_status]));
+        $this->assign('participant_status', E::ts("Was %1, now Attended", [1 => $details['status_id:label']]));
         $this->assign('status_class', 'qrcheckin-status-success');
       }
     }
