@@ -269,6 +269,12 @@ function qrcodecheckin_register_tokens(\Civi\Token\Event\TokenRegisterEvent $e):
       ->register('qrcodecheckin.qrcode_url_' . $event['id'], E::ts('QRCode link for event ') . $event['title'])
       ->register('qrcode_html_' . $event['id'], E::ts('QRCode image and link for event ') . $event['title']);
   }
+  // Let's also define a token for participant TokenProcessor contexts.
+  if (in_array('participantId', $e->getTokenProcessor()->getContextValues('schema')[0])) {
+    $e->entity('participant')
+      ->register('qrcode_url', E::ts('QRCode link for event'))
+      ->register('qrcode_html', E::ts('QRCode image and link for event'));
+  }
 
 }
 
@@ -324,7 +330,6 @@ function qrcodecheckin_evaluate_tokens(\Civi\Token\Event\TokenValueEvent $e) {
       $event_ids[$eventId] = $eventId;
     }
     foreach ($e->getRows() as $row) {
-      // FIXME: We should eventually expose these as participant tokens.
       if (empty($row->context['contactId'])) {
         continue;
       }
@@ -336,6 +341,25 @@ function qrcodecheckin_evaluate_tokens(\Civi\Token\Event\TokenValueEvent $e) {
         $urlToken = !empty($links) ? qrcodecheckin_generate_url_token($links) : '';
         $row->tokens('qrcodecheckin', 'qrcode_html_' . $event_id, $urlToken);
       }
+    }
+  }
+  if (array_key_exists('participant', $tokens) && (in_array('qrcode_url', $tokens['participant']) || in_array('qrcode_html', $tokens['participant']))) {
+    foreach ($e->getRows() as $row) {
+      if (empty($row->context['participantId'])) {
+        continue;
+      }
+      $participantId = $row->context['participantId'];
+      $contactId = $row->context['contactId'];
+      $eventId = \Civi\Api4\Participant::get(FALSE)
+        ->addSelect('event_id')
+        ->addWhere('id', '=', $participantId)
+        ->execute()
+        ->first()['event_id'];
+      $links = qrcodecheckin_get_qrcode_links($eventId, $contactId);
+      $row->format('text/plain')->tokens('participant', 'qrcode_url', implode('\n', $links));
+      $row->format('text/html')->tokens('participant', 'qrcode_url', implode('<br />', $links));
+      $urlToken = !empty($links) ? qrcodecheckin_generate_url_token($links) : '';
+      $row->tokens('participant', 'qrcode_html', $urlToken);
     }
   }
 }
